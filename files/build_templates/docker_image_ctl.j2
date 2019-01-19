@@ -133,6 +133,9 @@ start() {
         -e PRM_SNIFFER_FILE_PATH \
         -v /var/log/mellanox/sniffer:/var/log/mellanox/sniffer:rw \
 {%- endif %}
+{%- if docker_container_name == "pmon" and sonic_asic_platform == "mellanox" %}
+        -v /var/run/hw-management:/var/run/hw-management:rw \
+{%- endif %}
         -v /var/run/redis:/var/run/redis:rw \
         -v /usr/share/sonic/device/$PLATFORM:/usr/share/sonic/platform:ro \
 {%- if docker_container_name != "database" %}
