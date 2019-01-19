@@ -1,0 +1,51 @@
+From 0c1beff290f5bc80aa82e8224244c9dbb733baf2 Mon Sep 17 00:00:00 2001
+From: Kevin Wang <kevinw@mellanox.com>
+Date: Thu, 10 Jan 2019 07:22:31 +0200
+Subject: [PATCH] Suspend thermal control by default
+
+Suspend thermal control and set the default fan speed to 60%
+
+Signed-off-by: Kevin Wang <kevinw@mellanox.com>
+---
+ usr/usr/bin/hw-management-thermal-control.sh | 5 +++--
+ usr/usr/bin/hw-management.sh                 | 1 +
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/usr/usr/bin/hw-management-thermal-control.sh b/usr/usr/bin/hw-management-thermal-control.sh
+index 9ffb985..2208abb 100755
+--- a/usr/usr/bin/hw-management-thermal-control.sh
++++ b/usr/usr/bin/hw-management-thermal-control.sh
+@@ -115,6 +115,7 @@ max_ports=${5:-$max_ports_def}
+ # Local constants
+ pwm_noact=0
+ pwm_max=1
++pwm_def_rpm=153
+ pwm_max_rpm=255
+ max_amb=120000
+ untrusted_sensor=0
+@@ -891,8 +892,8 @@ disable_zones_max_pwm() {
+ 			fi
+ 		fi
+ 	done
+-	echo $pwm_max_rpm > $pwm
+-	log_action_msg "Set fan speed to maximum"
++	echo $pwm_def_rpm > $pwm
++	log_action_msg "Set fan speed to 60% percent"
+ }
+ 
+ # Validate thermal configuration.
+diff --git a/usr/usr/bin/hw-management.sh b/usr/usr/bin/hw-management.sh
+index 959c55c..fd9adf2 100755
+--- a/usr/usr/bin/hw-management.sh
++++ b/usr/usr/bin/hw-management.sh
+@@ -565,6 +565,7 @@ do_start()
+ 	connect_platform
+ 	backward_compatibility_link
+ 
++	echo 1 > $config_path/suspend
+ 	$THERMAL_CONTROL $thermal_type $max_tachos $max_psus&
+ }
+ 
+-- 
+1.9.1
+

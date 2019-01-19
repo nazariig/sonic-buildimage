@@ -98,11 +98,18 @@ start() {
         BOOT_TYPE=`getBootType`
         if [[ x"$WARM_BOOT" == x"true" || x"$BOOT_TYPE" == x"fast" ]]; then
             export FAST_BOOT=1
+        else
+            /bin/systemctl stop pmon
+            /usr/bin/hw-management.sh chipdown
         fi
+
         /usr/bin/mst start
         /usr/bin/mlnx-fw-upgrade.sh
         /etc/init.d/sxdkernel start
-        /sbin/modprobe i2c-dev
+
+        if [[ x"$WARM_BOOT" != x"true" && x"$BOOT_TYPE" != x"fast" ]]; then
+            /bin/systemctl start pmon
+        fi
     fi
 
     if [[ x"$WARM_BOOT" != x"true" ]]; then
