@@ -22,7 +22,7 @@ class PsuUtil(PsuBase):
         PsuBase.__init__(self)
 
         self.psu_path = "/var/run/hw-management/thermal/"
-        self.psu_presence = "psu{}_status"
+        self.psu_presence = "psu{}_pwr_status"
         self.psu_oper_status = "psu{}_pwr_status"
 
     def get_num_psus(self):
