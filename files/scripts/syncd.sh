@@ -103,7 +103,7 @@ start() {
         if [[ x"$WARM_BOOT" == x"true" || x"$BOOT_TYPE" == x"fast" ]]; then
             export FAST_BOOT=1
         else
-            if docker ps | grep '[p]mon' &> /dev/null; then docker exec pmon bash -c 'pkill sensord &> /dev/null; supervisorctl stop xcvrd &> /dev/null'; fi
+            /bin/systemctl stop pmon
             /usr/bin/hw-management.sh chipdown
         fi
 
@@ -112,7 +112,7 @@ start() {
         /etc/init.d/sxdkernel start
 
         if [[ x"$WARM_BOOT" != x"true" && x"$BOOT_TYPE" != x"fast" ]]; then
-            if docker ps | grep '[p]mon' &> /dev/null; then docker exec pmon bash -c 'supervisorctl restart lm-sensors &> /dev/null; supervisorctl restart xcvrd &> /dev/null'; fi
+            /bin/systemctl start pmon
         fi
     fi
 

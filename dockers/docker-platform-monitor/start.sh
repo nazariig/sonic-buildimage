@@ -7,6 +7,13 @@ rm -f /var/run/rsyslogd.pid
 
 supervisorctl start rsyslogd
 
+# If this platform has synchronization script, copy it to it's proper place and run
+if [ -e /usr/share/sonic/platform/scripts/wait_for_platform.sh ]; then
+    /bin/cp -f /usr/share/sonic/platform/scripts/wait_for_platform.sh /usr/bin/
+    /bin/chmod +x /usr/bin/wait_for_platform.sh
+    /usr/bin/wait_for_platform.sh
+fi
+
 # If this platform has an lm-sensors config file, copy it to it's proper place
 # and start lm-sensors
 if [ -e /usr/share/sonic/platform/sensors.conf ]; then
