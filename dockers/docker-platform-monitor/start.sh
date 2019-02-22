@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+declare -r EXIT_SUCCESS="0"
+
 mkdir -p /var/sonic
 echo "# Config files managed by sonic-config-engine" > /var/sonic/config_status
 
@@ -7,11 +9,14 @@ rm -f /var/run/rsyslogd.pid
 
 supervisorctl start rsyslogd
 
-# If this platform has synchronization script, copy it to it's proper place and run
-if [ -e /usr/share/sonic/platform/scripts/wait_for_platform.sh ]; then
-    /bin/cp -f /usr/share/sonic/platform/scripts/wait_for_platform.sh /usr/bin/
-    /bin/chmod +x /usr/bin/wait_for_platform.sh
-    /usr/bin/wait_for_platform.sh
+# If this platform has synchronization script, run it
+if [ -e /usr/share/sonic/platform/wait_for_platform ]; then
+    /usr/share/sonic/platform/wait_for_platform
+    EXIT_CODE="$?"
+    if [ "${EXIT_CODE}" != "${EXIT_SUCCESS}" ]; then
+        supervisorctl shutdown
+        exit "${EXIT_CODE}"
+    fi
 fi
 
 # If this platform has an lm-sensors config file, copy it to it's proper place
