@@ -1,0 +1,21 @@
+[Unit]
+Description=ASIC syncd for Mellanox platforms
+Requires=syncd.service
+Wants=hw-management.service database.service
+Before=syncd.service
+After=hw-management.service database.service
+
+[Service]
+Type=simple
+RemainAfterExit=true
+ExecStartPre=/bin/sh -c "/usr/bin/mlnx-asic-syncd.sh prestart"
+ExecStart=/bin/sh -c "/usr/bin/mlnx-asic-syncd.sh start"
+ExecStop=/bin/sh -c "/usr/bin/mlnx-asic-syncd.sh stop"
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=mlnx-asic-syncd
+SyslogFacility=daemon
+SyslogLevel=err
+
+[Install]
+WantedBy=multi-user.target

@@ -101,20 +101,6 @@ start() {
             export FAST_BOOT=1
         fi
 
-        if [[ x"$WARM_BOOT" != x"true" ]]; then
-            if [[ x"$(/bin/systemctl is-active pmon)" == x"active" ]]; then
-                /bin/systemctl stop pmon
-                /usr/bin/hw-management.sh chipdown
-                /bin/systemctl restart pmon
-            else
-                /usr/bin/hw-management.sh chipdown
-            fi
-        fi
-
-        if [[ x"$BOOT_TYPE" == x"fast" ]]; then
-            /usr/bin/hw-management.sh chipupdis
-        fi
-
         /usr/bin/mst start
         /usr/bin/mlnx-fw-upgrade.sh
         /etc/init.d/sxdkernel start

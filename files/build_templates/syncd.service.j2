@@ -1,20 +1,20 @@
 [Unit]
 Description=syncd service
 Requires=database.service updategraph.service
-{% if sonic_asic_platform == 'broadcom' %}
-Requires=opennsl-modules.service
-{% elif sonic_asic_platform == 'nephos' %}
-Requires=nps-modules-4.9.0-9-2-amd64.service
-{% endif %}
-After=database.service updategraph.service
-After=interfaces-config.service
-{% if sonic_asic_platform == 'broadcom' %}
-After=opennsl-modules.service
-{% elif sonic_asic_platform == 'nephos' %}
-After=nps-modules-4.9.0-9-2-amd64.service
-{% endif %}
-After=swss.service
 Before=ntp-config.service
+After=database.service updategraph.service swss.service interfaces-config.service
+{%- if sonic_asic_platform == 'mellanox' %}
+Wants=mlnx-asic-syncd.service
+After=mlnx-asic-syncd.service
+{%- endif %}
+{%- if sonic_asic_platform == 'broadcom' %}
+Requires=opennsl-modules.service
+After=opennsl-modules.service
+{%- endif %}
+{%- if sonic_asic_platform == 'nephos' %}
+Requires=nps-modules-4.9.0-9-2-amd64.service
+After=nps-modules-4.9.0-9-2-amd64.service
+{%- endif %}
 
 [Service]
 User=root
@@ -22,9 +22,9 @@ Environment=sonic_asic_platform={{ sonic_asic_platform }}
 ExecStartPre=/usr/local/bin/syncd.sh start
 ExecStart=/usr/local/bin/syncd.sh wait
 ExecStop=/usr/local/bin/syncd.sh stop
-{% if sonic_asic_platform == 'mellanox' %}
+{%- if sonic_asic_platform == 'mellanox' %}
 TimeoutStartSec=150
-{% endif %}
+{%- endif %}
 
 [Install]
 WantedBy=multi-user.target
