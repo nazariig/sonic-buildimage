@@ -1,0 +1,12 @@
+Source: mlnx-asic-syncd
+Maintainer: MellanoxBSP <system-sw-low-level@mellanox.com>
+Section: utils
+Priority: optional
+Build-Depends: debhelper, dh-systemd
+Standards-Version:
+Homepage: http://www.mellanox.com
+
+Package:mlnx-asic-syncd
+Architecture: any
+Depends: systemd, ${shlibs:Depends}, ${misc:Depends}
+Description: ASIC syncd for Mellanox platforms
