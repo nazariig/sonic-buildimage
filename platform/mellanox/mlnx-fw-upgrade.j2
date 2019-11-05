@@ -18,6 +18,12 @@ declare -r NO_PARAM="no"
 declare -r EXIT_SUCCESS="0"
 declare -r EXIT_FAILURE="1"
 
+declare -r CPLD_UPDATE_DIR="/etc/mlnx/cpld"
+declare -r CPLD_UPDATE_CONFIG="${CPLD_UPDATE_DIR}/cpld_update.cfg"
+
+declare -r CPLD_UPDATE_PERMIT="1"
+declare -r CPLD_UPDATE_DENY="0"
+
 declare -r QUERY_CMD="mlxfwmanager --query"
 declare -r BURN_CMD="mlxfwmanager -u -f -y"
 
@@ -27,6 +33,7 @@ declare -r QUERY_FILE="/tmp/mlxfwmanager-query.txt"
 declare -r FW_REQUIRED="{{ MLNX_FW_VERSION }}"
 
 IMAGE_UPGRADE="${NO_PARAM}"
+CPLD_UPGRADE="${NO_PARAM}"
 VERBOSE_LEVEL="${VERBOSE_MIN}"
 
 function PrintHelp() {
@@ -34,13 +41,15 @@ function PrintHelp() {
     echo "Usage: ./${SCRIPT_NAME} [OPTIONS]"
     echo
     echo "OPTIONS:"
-    echo "  -u, --upgrade  Upgrade firmware (ASIC/CPLD) using next boot image (useful after SONiC-To-SONiC update)"
+    echo "  -u, --upgrade  Upgrade firmware using next boot image (useful after SONiC-To-SONiC update)"
+    echo "  -c, --cpld     Upgrade CPLD firmware (requires -u|--upgrade)"
     echo "  -v, --verbose  Verbose mode"
     echo "  -h, --help     Print help"
     echo
     echo "Examples:"
     echo "  ./${SCRIPT_NAME}"
-    echo "  ./${SCRIPT_NAME} --upgrade"
+    echo "  ./${SCRIPT_NAME} --upgrade --cpld --verbose"
+    echo "  ./${SCRIPT_NAME} --upgrade --verbose"
     echo "  ./${SCRIPT_NAME} --help"
     echo
 }
@@ -51,6 +60,9 @@ function ParseArguments() {
             -u|--upgrade)
                 IMAGE_UPGRADE="${YES_PARAM}"
                 VERBOSE_LEVEL="${VERBOSE_MAX}"
+            ;;
+            -c|--cpld)
+                CPLD_UPGRADE="${YES_PARAM}"
             ;;
             -v|--verbose)
                 VERBOSE_LEVEL="${VERBOSE_MAX}"
@@ -215,12 +227,25 @@ function UpgradeCPLDFW_Worker() {
 
 function UpgradeCPLDFW() {
     local -r _CPLD_ARCHIVE="$1"
-    local -r _ASIC_DEV="/dev/mst/mt52100_pciconf0"
+    local -r _ASIC_DEV="$(find /dev/mst -iname '*_pciconf0')"
 
     if [[ ! -f "${_CPLD_ARCHIVE}" ]]; then
         LogNotice "CPLD update $(basename ${_CPLD_ARCHIVE}) was not provided for ${ONIE_PLATFORM}"
         return "${EXIT_SUCCESS}"
     fi
+
+    local _CPLD_UPDATE_FLAG="0"
+
+    if [[ -f "${CPLD_UPDATE_CONFIG}" ]]; then
+        _CPLD_UPDATE_FLAG="$(cat ${CPLD_UPDATE_CONFIG} 2>&1)"
+    fi
+
+    if [[ "${_CPLD_UPDATE_FLAG}" != "${CPLD_UPDATE_PERMIT}" ]]; then
+        LogNotice "CPLD update was not requested for ${ONIE_PLATFORM}"
+        return "${EXIT_SUCCESS}"
+    fi
+
+    RunCmd "echo ${CPLD_UPDATE_DENY} > ${CPLD_UPDATE_CONFIG}"
 
     CPLD_DIR="$(mktemp -d)"
 
@@ -279,8 +304,8 @@ function UpgradeFWFromImage() {
     RunCmd "mkdir -p ${FS_MOUNTPOINT}"
     RunCmd "mount -t squashfs ${FS_PATH} ${FS_MOUNTPOINT}"
 
-    UpgradeASICFW "${FS_MOUNTPOINT}/etc/mlnx/fw-SPC.mfa"
-    UpgradeCPLDFW "${FS_MOUNTPOINT}/etc/mlnx/cpld/${ONIE_MACHINE#mlnx_}_cpld.tar.gz"
+    UpgradeASICFW "${FS_MOUNTPOINT}${FW_FILE}"
+    UpgradeCPLDFW "${FS_MOUNTPOINT}${CPLD_UPDATE_DIR}/${ONIE_MACHINE#mlnx_}_cpld.tar.gz"
 }
 
 function Cleanup() {
@@ -300,6 +325,15 @@ ParseMachineConf
 ParseArguments "$@"
 
 WaitForDevice
+
+if [[ "${CPLD_UPGRADE}" = "${YES_PARAM}" ]]; then
+    if [[ "${IMAGE_UPGRADE}" = "${NO_PARAM}" ]]; then
+        ExitFailure "mandatory parameter was not provided: -u|--upgrade"
+    fi
+
+    RunCmd "mkdir -p ${CPLD_UPDATE_DIR}"
+    RunCmd "echo ${CPLD_UPDATE_PERMIT} > ${CPLD_UPDATE_CONFIG}"
+fi
 
 if [[ "${IMAGE_UPGRADE}" = "${YES_PARAM}" ]]; then
     UpgradeFWFromImage
