@@ -137,7 +137,7 @@ function ShowProgressBar() {
         sleep 0.5s
     done
 
-    echo -ne "\r"
+    echo -ne "\033[1K\r"
 }
 
 function WaitForDevice() {
@@ -232,7 +232,7 @@ function UpgradeCPLDFW() {
     local -r _CPLD_ARCHIVE="$1"
 
     if [[ "${UPDATE_MLNX_CPLD_FW}" = "1" ]]; then
-        LogWarning "Forced CPLD refresh was requested for ${ONIE_PLATFORM}"
+        LogWarning "forced CPLD refresh was requested for ${ONIE_PLATFORM}"
         CPLD_UPGRADE="${YES_PARAM}"
     fi
 
