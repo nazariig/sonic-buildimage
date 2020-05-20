@@ -356,15 +356,15 @@ class Component(ComponentBase):
 class ComponentONIE(Component):
     COMPONENT_NAME = 'ONIE'
     COMPONENT_DESCRIPTION = 'ONIE - Open Network Install Environment'
-    #COMPONENT_FIRMWARE_EXTENSION = None
 
     ONIE_VERSION_ATTR = 'onie_version'
     ONIE_IMAGE_VERSION_ATTR = 'image_version'
 
     def __init__(self):
+        super(ComponentONIE, self).__init__()
+
         self.name = self.COMPONENT_NAME
         self.description = self.COMPONENT_DESCRIPTION
-        #self.image_ext_name = self.COMPONENT_FIRMWARE_EXTENSION
         self.onie_updater = ONIEUpdater()
 
     def __install_firmware(self, image_path):
@@ -416,6 +416,8 @@ class ComponentSSD(Component):
     SSD_FIRMWARE_UPDATE_COMMAND = "/usr/bin/mlnx-ssd-fw-update.sh -y -u -i {}"
 
     def __init__(self):
+        super(ComponentSSD, self).__init__()
+
         self.name = self.COMPONENT_NAME
         self.description = self.COMPONENT_DESCRIPTION
         self.image_ext_name = self.COMPONENT_FIRMWARE_EXTENSION
@@ -530,6 +532,8 @@ class ComponentBIOS(Component):
     BIOS_VERSION_COMMAND = 'dmidecode --oem-string 1'
 
     def __init__(self):
+        super(ComponentBIOS, self).__init__()
+
         self.name = self.COMPONENT_NAME
         self.description = self.COMPONENT_DESCRIPTION
         self.image_ext_name = self.COMPONENT_FIRMWARE_EXTENSION
@@ -599,6 +603,8 @@ class ComponentCPLD(Component):
     CPLD_FIRMWARE_UPDATE_COMMAND = 'echo cpldupdate --dev {} --print-progress {}'
 
     def __init__(self, idx):
+        super(ComponentCPLD, self).__init__()
+
         self.idx = idx
         self.name = self.COMPONENT_NAME.format(self.idx)
         self.description = self.COMPONENT_DESCRIPTION
@@ -744,14 +750,6 @@ class ComponentCPLD(Component):
 
             print("INFO: Processing {} refresh file: firmware update".format(self.name))
             self.__install_firmware(os.path.join(mpfa.get_path(), refresh_firmware))
-
-            #self.__init__
-
-             #   raise RuntimeError("")
-             #   burn_file = mpfa.get_metadata().get('firmware', 'burn_file')
-             #   print(mpfa.get_metadata().get('firmware', 'burn_file'))
-        #mpfa = MPFAManager(image_path)
-        #pass
 
     @classmethod
     def get_component_list(cls):
