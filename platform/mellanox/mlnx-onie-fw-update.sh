@@ -67,6 +67,13 @@ show_pending()
 	return $num
 }
 
+system_reboot()
+{
+	echo "Reboot will be done after 5 sec."
+	sleep 5
+	/sbin/reboot
+}
+
 # Process command arguments
 cmd=$1
 # optional argument
@@ -93,6 +100,9 @@ case "$cmd" in
 			change_grub_boot_order
 			rc=$?
 			clean_onie_access
+			if [ $rc -eq 0 ]; then
+				system_reboot
+			fi
 			exit $rc
 		else
 			echo "ERROR: NO FW images for update."
