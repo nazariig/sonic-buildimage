@@ -375,7 +375,6 @@ class ComponentONIE(Component):
     COMPONENT_NAME = 'ONIE'
     COMPONENT_DESCRIPTION = 'ONIE - Open Network Install Environment'
 
-    ONIE_VERSION_ATTR = 'onie_version'
     ONIE_IMAGE_VERSION_ATTR = 'image_version'
 
     def __init__(self):
@@ -546,7 +545,9 @@ class ComponentBIOS(Component):
     COMPONENT_DESCRIPTION = 'BIOS - Basic Input/Output System'
     COMPONENT_FIRMWARE_EXTENSION = '.rom'
 
-    BIOS_VERSION_COMMAND = 'dmidecode --oem-string 1'
+    BIOS_VERSION_ATTR = 'String 1'
+
+    BIOS_VERSION_COMMAND = 'dmidecode -q -t 11'
 
     def __init__(self):
         super(ComponentBIOS, self).__init__()
@@ -577,11 +578,15 @@ class ComponentBIOS(Component):
         cmd = self.BIOS_VERSION_COMMAND
 
         try:
-            version = subprocess.check_output(cmd.split(), stderr=subprocess.STDOUT).rstrip('\n')
+            output = subprocess.check_output(cmd.split(), stderr=subprocess.STDOUT).rstrip('\n')
         except subprocess.CalledProcessError as e:
             raise RuntimeError("Failed to get {} version: {}".format(self.name, str(e)))
 
-        return version
+        for line in output.splitlines():
+            if line.lstrip(' \t').startswith(self.BIOS_VERSION_ATTR):
+                return line.split(':')[1].lstrip(' \t')
+
+        raise RuntimeError("Failed to parse {} version".format(self.name))
 
     def get_available_firmware_version(self, image_path):
         raise NotImplementedError("{} component doesn't support firmware version query".format(self.name))
