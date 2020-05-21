@@ -375,7 +375,6 @@ class ComponentONIE(Component):
     COMPONENT_NAME = 'ONIE'
     COMPONENT_DESCRIPTION = 'ONIE - Open Network Install Environment'
 
-    ONIE_VERSION_ATTR = 'onie_version'
     ONIE_IMAGE_VERSION_ATTR = 'image_version'
 
     def __init__(self):
