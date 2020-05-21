@@ -9,15 +9,16 @@ from __future__ import print_function
 
 
 try:
-    import ConfigParser
-    import tempfile
-    from sonic_platform_base.component_base import ComponentBase
-    from sonic_device_util import get_machine_info
-    from glob import glob
-    import subprocess
-    import io
     import os
+    import io
     import re
+    import glob
+    import tempfile
+    import subprocess
+    import ConfigParser
+
+    from sonic_device_util import get_machine_info
+    from sonic_platform_base.component_base import ComponentBase
 except ImportError as e:
     raise ImportError(str(e) + "- required module not found")
 
@@ -63,14 +64,14 @@ class MPFAManager(object):
             raise RuntimeError("MPFA metadata doesn't exist: path={}".format(metadata_path))
 
         cp = ConfigParser.ConfigParser()
-        with open(metadata_path, 'r') as metadata_ini:
+        with io.open(metadata_path, 'r') as metadata_ini:
             cp.readfp(metadata_ini)
 
         self.__metadata = cp
 
     def extract(self):
-        #if self.__contents_path and os.path.exists(self.__contents_path):
-        #    return
+        if self.is_extracted():
+            return
 
         self.__validate_path(self.__mpfa_path)
         self.__extract_contents(self.__mpfa_path)
@@ -81,14 +82,17 @@ class MPFAManager(object):
             cmd = self.MPFA_CLEANUP_COMMAND.format(self.__contents_path)
             subprocess.check_call(cmd.split())
 
-            self.__contents_path = None
-            self.__metadata = None
+        self.__contents_path = None
+        self.__metadata = None
 
     def get_path(self):
         return self.__contents_path
 
     def get_metadata(self):
         return self.__metadata
+
+    def is_extracted(self):
+        return self.__contents_path is not None and os.path.exists(self.__contents_path)
 
 
 class ONIEUpdater(object):
@@ -138,6 +142,46 @@ class ONIEUpdater(object):
 
         if os.path.exists(fs_mountpoint):
             os.rmdir(fs_mountpoint)
+
+    def __stage_update(self, image_path):
+        cmd = self.ONIE_FW_UPDATE_CMD_ADD.format(image_path)
+
+        try:
+            subprocess.check_call(cmd.split())
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError("Failed to stage firmware update: {}".format(str(e)))
+
+    def __unstage_update(self, image_path):
+        cmd = self.ONIE_FW_UPDATE_CMD_REMOVE.format(os.path.basename(image_path))
+
+        try:
+            subprocess.check_call(cmd.split())
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError("Failed to unstage firmware update: {}".format(str(e)))
+
+    def __trigger_update(self):
+        cmd = self.ONIE_FW_UPDATE_CMD_UPDATE
+
+        try:
+            subprocess.check_call(cmd.split())
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError("Failed to trigger firmware update: {}".format(str(e)))
+
+    def __is_update_staged(self, image_path):
+        cmd = self.ONIE_FW_UPDATE_CMD_SHOW_PENDING
+
+        try:
+            output = subprocess.check_output(cmd.split(), stderr=subprocess.STDOUT).rstrip('\n')
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError("Failed to get pending firmware updates: {}".format(str(e)))
+
+        basename = os.path.basename(image_path)
+
+        for line in output.splitlines():
+            if line.startswith(basename):
+                return True
+
+        return False
 
     def parse_onie_version(self, version, is_base=False):
         onie_year = None
@@ -236,26 +280,6 @@ class ONIEUpdater(object):
         except subprocess.CalledProcessError as e:
             raise RuntimeError("Failed to get pending firmware updates: {}".format(str(e)))
 
-        basename = os.path.basename(image_path)
-
-        for line in output.splitlines():
-            if line.startswith(basename):
-                cmd = self.ONIE_FW_UPDATE_CMD_REMOVE.format(basename)
-
-                try:
-                    subprocess.check_call(cmd.split())
-                except subprocess.CalledProcessError as e:
-                    raise RuntimeError("Failed to remove duplicated firmware update: {}".format(str(e)))
-
-                break
-
-        cmd = self.ONIE_FW_UPDATE_CMD_SHOW_PENDING
-
-        try:
-            output = subprocess.check_output(cmd.split(), stderr=subprocess.STDOUT).rstrip('\n')
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError("Failed to get pending firmware updates: {}".format(str(e)))
-
         no_pending_updates = False
 
         for line in output.splitlines():
@@ -266,19 +290,13 @@ class ONIEUpdater(object):
         if not no_pending_updates:
             raise RuntimeError("Failed to complete firmware update: pending updates are present")
 
-        cmd = self.ONIE_FW_UPDATE_CMD_ADD.format(image_path)
-
         try:
-            subprocess.check_call(cmd.split())
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError("Failed to stage firmware update: {}".format(str(e)))
-
-        cmd = self.ONIE_FW_UPDATE_CMD_UPDATE
-
-        try:
-            subprocess.check_call(cmd.split())
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError("Failed to trigger firmware update: {}".format(str(e)))
+            self.__stage_update(image_path)
+            self.__trigger_update()
+        except:
+            if self.__is_update_staged(image_path):
+                self.__unstage_update(image_path)
+            raise
 
     def is_non_onie_firmware_update_supported(self):
         current_version = self.get_onie_version()
@@ -406,7 +424,6 @@ class ComponentSSD(Component):
     COMPONENT_FIRMWARE_EXTENSION = '.pkg'
 
     FIRMWARE_VERSION_ATTR = 'Firmware Version'
-    CURRENT_FIRMWARE_VERSION_ATTR = 'Current Firmware Version'
     AVAILABLE_FIRMWARE_VERSION_ATTR = 'Available Firmware Version'
     POWER_CYCLE_REQUIRED_ATTR = 'Power Cycle Required'
     UPGRADE_REQUIRED_ATTR = 'Upgrade Required'
@@ -600,7 +617,7 @@ class ComponentCPLD(Component):
     CPLD_PART_NUMBER_DEFAULT = '0'
     CPLD_VERSION_MINOR_DEFAULT = '0'
 
-    CPLD_FIRMWARE_UPDATE_COMMAND = 'echo cpldupdate --dev {} --print-progress {}'
+    CPLD_FIRMWARE_UPDATE_COMMAND = 'cpldupdate --dev {} --print-progress {}'
 
     def __init__(self, idx):
         super(ComponentCPLD, self).__init__()
@@ -617,7 +634,7 @@ class ComponentCPLD(Component):
 
         pattern = os.path.join(self.MST_DEVICE_PATH, self.MST_DEVICE_PATTERN)
 
-        mst_dev_list = glob(pattern)
+        mst_dev_list = glob.glob(pattern)
         if not mst_dev_list or len(mst_dev_list) != 1:
             devices = str(os.listdir(self.MST_DEVICE_PATH))
             print("ERROR: Failed to get mst device: pattern={}, devices={}".format(pattern, devices))
@@ -679,60 +696,8 @@ class ComponentCPLD(Component):
 
         return "Immediate power cycle is required to complete {} firmware update".format(self.name)
 
-        #if os.path.splitext(image_path)
-        #return "Power cycle (30 sec) or refresh image is required to complete {} firmware update".format(self.name)
-
     def install_firmware(self, image_path):
         return self.__install_firmware(image_path)
-        #print("INFO: installing CPLD firmware...")
-        #return True
-        """
-        Installs firmware to the component
-
-        Args:
-            image_path: A string, path to firmware image
-
-        Returns:
-            A boolean, True if install was successful, False if not
-
-        Details:
-            The command "cpldupdate" is provided to install CPLD. There are two ways to do it:
-                1. To burn CPLD via gpio, which is faster but only supported on new systems, like SN3700, ...
-                2. To install CPLD via firmware, which is slower but supported on older systems.
-                   This also requires the mst device designated.
-            "cpldupdate --dev <devname> <vme_file>" has the logic of testing whether to update via gpio is supported,
-            and if so then go this way, otherwise tries updating software via fw. So we take advantage of it to update the CPLD. 
-            By doing so we don't have to mind whether to update via gpio supported, which belongs to hardware details.
-
-            So the procedure should be:
-                1. Test whether the file exists
-                2. Fetch the mst device name
-                3. Update CPLD via executing "cpldupdate --dev <devname> <vme_file>"
-                4. Check the result
-        """
-
-
-        if not self._check_file_validity(image_path):
-            return False
-
-        mst_dev_list = self._get_mst_device()
-        if mst_dev_list is None:
-            print("ERROR: Failed to get mst device which is required for CPLD updating or multiple device files matched")
-            return False
-
-        cmdline = self.CPLD_UPDATE_COMMAND.format(mst_dev_list[0], image_path)
-        success_flag = False
-
-        try:
-            subprocess.check_call(cmdline, stderr=subprocess.STDOUT, shell=True)
-            success_flag = True
-        except subprocess.CalledProcessError as e:
-            print("ERROR: Failed to upgrade CPLD: rc={}".format(e.returncode))
-
-        if success_flag:
-            print("INFO: Refresh or power cycle is required to finish CPLD installation")
-
-        return success_flag
 
     def update_firmware(self, image_path):
         with MPFAManager(image_path) as mpfa:
