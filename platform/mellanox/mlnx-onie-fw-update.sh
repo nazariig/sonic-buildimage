@@ -6,6 +6,7 @@
 # SPDX-License-Identifier:     GPL-2.0
 
 this_script="$(basename $(realpath ${0}))"
+lock_file="/var/run/${this_script%.*}.lock"
 
 onie_mount=/mnt/onie-boot
 onie_lib=/lib/onie
@@ -118,11 +119,32 @@ terminate_handler() {
 }
 
 register_terminate_handler() {
-    trap 'terminate_handler SIGHUP' SIGHUP
-    trap 'terminate_handler SIGINT' SIGINT
-    trap 'terminate_handler SIGQUIT' SIGQUIT
-    trap 'terminate_handler SIGTERM' SIGTERM
+    trap "terminate_handler SIGHUP" SIGHUP
+    trap "terminate_handler SIGINT" SIGINT
+    trap "terminate_handler SIGQUIT" SIGQUIT
+    trap "terminate_handler SIGTERM" SIGTERM
 }
+
+unlock_handler() {
+    /usr/bin/flock -u ${1}
+}
+
+register_unlock_handler() {
+    trap "unlock_handler ${1}" EXIT
+}
+
+unlock_script_state_change() {
+    /usr/bin/flock -u ${lock_fd}
+}
+
+lock_script_state_change(){
+    exec {lock_fd}>${lock_file}
+    /usr/bin/flock -x ${lock_fd}
+    register_unlock_handler ${lock_fd}
+}
+
+# Multiprocessing synchronization
+lock_script_state_change
 
 # Process command arguments
 cmd="${1}"
