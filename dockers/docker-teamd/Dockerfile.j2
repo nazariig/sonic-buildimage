@@ -17,6 +17,22 @@ RUN apt-get update
 {{ install_debian_packages(docker_teamd_debs.split(' ')) }}
 {%- endif %}
 
+# W/A: install python2
+RUN apt-get -y --no-install-recommends install python2.7 python-pip
+
+# W/A: upgrade pip via PyPI and uninstall the Debian version
+RUN pip2 install --upgrade pip
+
+# W/A: setuptools and wheel are necessary for installing some Python wheel packages
+RUN pip2 install --no-cache-dir setuptools==44.1.1
+RUN pip2 install --no-cache-dir wheel==0.35.1
+
+# W/A: install supervisor
+RUN pip2 install supervisor==4.2.1
+
+# W/A: add support for supervisord to handle startup dependencies
+RUN pip2 install supervisord-dependent-startup==1.4.0
+
 RUN apt-get clean -y      && \
     apt-get autoclean -y  && \
     apt-get autoremove -y && \
