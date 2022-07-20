@@ -1,0 +1,35 @@
+module sonic-bgp-device-global {
+
+    yang-version 1.1;
+
+    namespace "http://github.com/Azure/sonic-bgp-device-global";
+    prefix bgpdg;
+
+    organization "SONiC";
+    contact "SONiC";
+    description "BGP Device Global YANG Module";
+
+    revision 2022-07-18 {
+        description "Initial revision.";
+    }
+
+    container sonic-bgp-device-global {
+
+        container BGP_DEVICE_GLOBAL {
+
+            container STATE {
+
+                leaf tsa_enabled {
+                    description "Universal Traffic Shift A/B state switch";
+                    type boolean;
+                    default false;
+                }
+
+            }
+            /* end of container STATE */
+        }
+        /* end of container BGP_DEVICE_GLOBAL */
+    }
+    /* end of container sonic-bgp-device-global */
+}
+/* end of module sonic-bgp-device-global */

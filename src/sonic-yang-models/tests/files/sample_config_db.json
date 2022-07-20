@@ -1305,6 +1305,11 @@
             "default|ipv4_unicast|21.0.0.0/8": {
             }
         },
+        "BGP_DEVICE_GLOBAL": {
+            "STATE": {
+                "tsa_enabled": "false"
+            }
+        },
         "BGP_PEER_RANGE": {
             "BGPSLBPassive": {
                 "ip_range": [
@@ -1355,6 +1360,28 @@
         },
         "BGP_NEIGHBOR_AF": {
             "default|192.168.1.1|ipv4_unicast": {
+            }
+        },
+        "BGP_INTERNAL_NEIGHBOR": {
+            "10.1.0.0": {
+                "asn": "64850",
+                "holdtime": "180",
+                "keepalive": "60",
+                "local_addr": "10.1.0.1",
+                "name": "ASIC1",
+                "nhopself": "0",
+                "rrclient": "0",
+                "admin_status": "up"
+            },
+            "2603:10e2:400:1::1": {
+                "asn": "64850",
+                "holdtime": "180",
+                "keepalive": "60",
+                "local_addr": "2603:10e2:400:1::2",
+                "name": "ASIC0",
+                "nhopself": "0",
+                "rrclient": "0",
+                "admin_status": "up"
             }
         },
         "BGP_PEER_GROUP": {
@@ -1869,29 +1896,6 @@
                 "replay_window": "64",
                 "send_sci": "true",
                 "rekey_period": "3600"
-            }
-        },
-
-        "BGP_INTERNAL_NEIGHBOR": {
-            "10.1.0.0": {
-                "asn": "64850",
-                "holdtime": "180",
-                "keepalive": "60",
-                "local_addr": "10.1.0.1",
-                "name": "ASIC1",
-                "nhopself": "0",
-                "rrclient": "0",
-                "admin_status": "up"
-            },
-            "2603:10e2:400:1::1": {
-                "asn": "64850",
-                "holdtime": "180",
-                "keepalive": "60",
-                "local_addr": "2603:10e2:400:1::2",
-                "name": "ASIC0",
-                "nhopself": "0",
-                "rrclient": "0",
-                "admin_status": "up"
             }
         },
 

@@ -1,0 +1,20 @@
+{
+    "BGP_DEVICE_GLOBAL_VALID": {
+        "sonic-bgp-device-global:sonic-bgp-device-global": {
+            "sonic-bgp-device-global:BGP_DEVICE_GLOBAL": {
+                "sonic-bgp-device-global:STATE" : {
+                    "tsa_enabled": "true"
+                }
+            }
+        }
+    },
+    "BGP_DEVICE_GLOBAL_INVALID_TSA": {
+        "sonic-bgp-device-global:sonic-bgp-device-global": {
+            "sonic-bgp-device-global:BGP_DEVICE_GLOBAL": {
+                "sonic-bgp-device-global:STATE": {
+                    "tsa_enabled": "invalid_value"
+                }
+            }
+        }
+    }
+}

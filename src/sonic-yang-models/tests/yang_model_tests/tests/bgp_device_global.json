@@ -1,0 +1,9 @@
+{
+    "BGP_DEVICE_GLOBAL_VALID": {
+        "desc": "Configure BGP_DEVICE_GLOBAL."
+    },
+    "BGP_DEVICE_GLOBAL_INVALID_TSA": {
+        "desc": "Configure invalid TSA_ENABLED in BGP_DEVICE_GLOBAL.",
+        "eStrKey" : "InvalidValue"
+    }
+}
