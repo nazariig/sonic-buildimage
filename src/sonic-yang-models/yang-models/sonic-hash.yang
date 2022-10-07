@@ -18,6 +18,7 @@ module sonic-hash {
     typedef hash-field {
         description "Represents native hash field";
         type stypes:hash-field {
+            enum IN_PORT;
             enum DST_MAC;
             enum SRC_MAC;
             enum ETHERTYPE;
